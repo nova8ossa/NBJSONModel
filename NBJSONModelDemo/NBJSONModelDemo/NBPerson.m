@@ -10,9 +10,9 @@
 
 @implementation NBPerson
 
-- (NSDictionary *)jsonModelKeyMapper {
+- (NSDictionary *)modelJSONKeyMapper {
     
-    return @{@"kids": @"children"};
+    return @{@"children": @"kids"};
 }
 
 @end

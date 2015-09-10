@@ -14,34 +14,38 @@
 @interface NBModelPropertyType : NSObject
 
 @property (nonatomic, copy) NSString *propertyName;
-@property (nonatomic, strong) Class propertyClass;
+@property (nonatomic, copy) NSString *jsonName;
+@property (nonatomic, copy) NSString *className;
 
-- (instancetype)initWithName:(NSString *)name propertyAttributes:(NSString *)attributes;
+- (instancetype)initWithAttributes:(NSString *)attributes;
 
 @end
 
 @implementation NBModelPropertyType
 
-- (instancetype)initWithName:(NSString *)name propertyAttributes:(NSString *)attributes {
+- (instancetype)initWithAttributes:(NSString *)attributes {
     
     self = [super init];
     if (self) {
-        _propertyName = [name copy];
         
         NSString *typeInfo = [[attributes componentsSeparatedByString:@","] firstObject];
-        typeInfo = [typeInfo substringWithRange:NSMakeRange(3, typeInfo.length - 4)];
-        
-        NSRange range = [typeInfo rangeOfString:@"<"];
-        if (range.location != NSNotFound) {
+        if ([typeInfo hasPrefix:@"T@"]) {
+            typeInfo = [typeInfo substringWithRange:NSMakeRange(3, typeInfo.length - 4)];
             
-            NSString *protocolName = [typeInfo substringFromIndex:range.location + 1];
-            range = [protocolName rangeOfString:@">"];
+            NSRange range = [typeInfo rangeOfString:@"<"];
             if (range.location != NSNotFound) {
-                protocolName = [protocolName substringToIndex:range.location];
+                
+                NSString *protocolName = [typeInfo substringFromIndex:range.location + 1];
+                range = [protocolName rangeOfString:@">"];
+                if (range.location != NSNotFound) {
+                    protocolName = [protocolName substringToIndex:range.location];
+                }
+                _className = [protocolName copy];
+            }else{
+                _className = [typeInfo copy];
             }
-            _propertyClass = NSClassFromString(protocolName);
         }else{
-            _propertyClass = NSClassFromString(typeInfo);
+            _className = [typeInfo copy];
         }
     }
     return self;
@@ -93,13 +97,15 @@ static char NBCachedPropertyMapKey;
     }
     return self;
 }
-    
+
 - (instancetype)initWithJSONDict:(NSDictionary *)dict {
     
     self = [self init];
     if (self) {
+        
         [self setValuesForKeysWithDictionary:dict];
     }
+    
     return self;
 }
 
@@ -107,29 +113,63 @@ static char NBCachedPropertyMapKey;
     
     if ([self isKindOfClass:[NBJSONModel class]] && !objc_getAssociatedObject(self.class, &NBCachedPropertyMapKey)) {
         
-        unsigned int count;
-        objc_property_t *properties = class_copyPropertyList([self class], &count);
+        Class class = [self class];
         NSMutableDictionary *propertyMap = [NSMutableDictionary dictionary];
-        for (int i = 0; i < count; i++) {
+        while (class != [NBJSONModel class]) {
             
-            objc_property_t property = properties[i];
-            NSString *propertyName = [NSString stringWithUTF8String:property_getName(property)];
-            NSString *propertyAttributes = [NSString stringWithUTF8String:property_getAttributes(property)];
-            
-            // 只需要记录对象类型 T@"NSArray<NBJSONModel><...>"
-            if ([propertyAttributes hasPrefix:@"T@"]) {
-                NBModelPropertyType *propertyType = [[NBModelPropertyType alloc] initWithName:propertyName
-                                                                           propertyAttributes:propertyAttributes];
-                NSDictionary *keyMapper = [(NBJSONModel *)self jsonModelKeyMapper];
-                NSString *jsonKey = [keyMapper objectForKey:propertyName];
-                [propertyMap setObject:propertyType forKey:jsonKey ?: propertyName];
+            unsigned int count;
+            objc_property_t *properties = class_copyPropertyList(class, &count);
+            NSDictionary *keyMapper = [(NBJSONModel *)self modelJSONKeyMapper];
+            for (int i = 0; i < count; i++) {
+                
+                objc_property_t property = properties[i];
+                NSString *propertyName = [NSString stringWithUTF8String:property_getName(property)];
+                NSString *propertyAttributes = [NSString stringWithUTF8String:property_getAttributes(property)];
+                
+                NBModelPropertyType *propertyType = [[NBModelPropertyType alloc] initWithAttributes:propertyAttributes];
+                propertyType.propertyName = propertyName;
+                propertyType.jsonName = [keyMapper objectForKey:propertyName] ?: propertyName;
+                [propertyMap setObject:propertyType forKey:propertyType.jsonName];
             }
+            free(properties);
+            class = [class superclass];
         }
         objc_setAssociatedObject(self.class, &NBCachedPropertyMapKey, propertyMap, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
 
-- (NSDictionary *)jsonModelKeyMapper {
+- (NSDictionary *)jsonDict {
+    
+    NSDictionary *propertyMap = objc_getAssociatedObject(self.class, &NBCachedPropertyMapKey);
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    for (NSString *property in propertyMap) {
+        
+        NBModelPropertyType *propertyType = [propertyMap objectForKey:property];
+        id obj = [self valueForKey:propertyType.propertyName];
+        
+        if ([obj isKindOfClass:[NBJSONModel class]]) {
+            
+            [dict setObject:[obj jsonDict] forKey:propertyType.jsonName];
+        }else if ([obj isKindOfClass:[NSArray class]] && [NSClassFromString(propertyType.className) isSubclassOfClass:[NBJSONModel class]]) {
+            
+            NSArray *items = (NSArray *)obj;
+            NSMutableArray *jsonList = [NSMutableArray array];
+            for (id item in items) {
+                [jsonList addObject:[item jsonDict]];
+            }
+            [dict setObject:jsonList forKey:propertyType.jsonName];
+        }else {
+            if (obj) {
+                [dict setValue:obj forKey:propertyType.jsonName];
+            }
+        }
+    }
+    
+    return dict;
+}
+
+
+- (NSDictionary *)modelJSONKeyMapper {
     
     return @{};
 }
@@ -137,14 +177,14 @@ static char NBCachedPropertyMapKey;
 - (void)setValue:(id)value forKey:(NSString *)key {
     
     NSDictionary *propertyMap = objc_getAssociatedObject(self.class, &NBCachedPropertyMapKey);
-    NSString *propertyName = [[self jsonModelKeyMapper] objectForKey:key];
-    propertyName = propertyName ?: key;
-    NBModelPropertyType *propertyType = [propertyMap objectForKey:propertyName];
-    Class class = propertyType.propertyClass;
+    NBModelPropertyType *propertyType = [propertyMap objectForKey:key];
+    NSString *propertyName = propertyType.propertyName;
+    Class class = NSClassFromString(propertyType.className);
     
     id objToSet = value;
     if ([value isKindOfClass:[NSArray class]] && class) {
-        objToSet = [value arrayWithModelClass:propertyType.propertyClass];
+        
+        objToSet = [value arrayWithModelClass:class];
     }else if ([value isKindOfClass:[NSDictionary class]] && class) {
         objToSet = [class isSubclassOfClass:[NBJSONModel class]] ? [[class alloc] initWithJSONDict:value] : value;
     }

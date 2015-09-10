@@ -35,7 +35,7 @@
                                       @{@"name": @"Abel", @"spouse": @"unknow", @"age": @(7), @"kids": @[]},
                                       @{@"name": @"Seth", @"spouse": @"unknow", @"age": @(8), @"kids": @[]}]};
     adam = [[NBPerson alloc] initWithJSONDict:dict];
-    NSLog(@"%@", adam);
+    NSLog(@"%@", [adam jsonDict]);
 }
 
 - (void)didReceiveMemoryWarning {

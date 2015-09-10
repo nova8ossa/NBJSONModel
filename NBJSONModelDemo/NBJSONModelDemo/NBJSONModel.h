@@ -12,6 +12,8 @@
 
 - (instancetype)initWithJSONDict:(NSDictionary *)dict;
 
-- (NSDictionary *)jsonModelKeyMapper;
+- (NSDictionary *)jsonDict;
+
+- (NSDictionary *)modelJSONKeyMapper;
 
 @end
