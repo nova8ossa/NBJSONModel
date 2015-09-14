@@ -93,7 +93,7 @@ static char NBCachedPropertyMapKey;
     
     self = [super init];
     if (self) {
-        [self cachingProperties];
+        [self cacheProperties];
     }
     return self;
 }
@@ -134,7 +134,7 @@ static char NBCachedPropertyMapKey;
     }
 }
 
-- (void)cachingProperties {
+- (void)cacheProperties {
     
     if ([self isKindOfClass:[NBJSONModel class]] && !objc_getAssociatedObject(self.class, &NBCachedPropertyMapKey)) {
         
