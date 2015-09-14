@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface NBJSONModel : NSObject
+@interface NBJSONModel : NSObject <NSCoding>
 
 - (instancetype)initWithJSONDict:(NSDictionary *)dict;
 

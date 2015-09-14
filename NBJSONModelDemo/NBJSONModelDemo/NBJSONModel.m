@@ -105,8 +105,33 @@ static char NBCachedPropertyMapKey;
         
         [self setValuesForKeysWithDictionary:dict];
     }
-    
     return self;
+}
+
+- (id)initWithCoder:(NSCoder *)aDecoder; {
+    
+    self = [self init];
+    if (self) {
+        NSDictionary *propertyMap = objc_getAssociatedObject(self.class, &NBCachedPropertyMapKey);
+        for (NSString *key in propertyMap) {
+            
+            NBModelPropertyType *type = [propertyMap objectForKey:key];
+            id objToSet = [aDecoder decodeObjectForKey:type.propertyName];
+            [self setValue:objToSet forKey:type.jsonName];
+        }
+    }
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)aCoder {
+    
+    NSDictionary *propertyMap = objc_getAssociatedObject(self.class, &NBCachedPropertyMapKey);
+    for (NSString *key in propertyMap) {
+        
+        NBModelPropertyType *type = [propertyMap objectForKey:key];
+        id objToSet = [self valueForKey:type.propertyName];
+        [aCoder encodeObject:objToSet forKey:type.propertyName];
+    }
 }
 
 - (void)cachingProperties {
@@ -167,7 +192,6 @@ static char NBCachedPropertyMapKey;
     
     return dict;
 }
-
 
 - (NSDictionary *)modelJSONKeyMapper {
     
