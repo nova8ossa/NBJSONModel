@@ -22,7 +22,7 @@ pod "NBJSONModel"
 
 ## Author
 
-梵天, fantian@xiaokakeji.com
+梵天, nova8ossa@gmail.com
 
 ## License
 
