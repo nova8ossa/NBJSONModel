@@ -31,11 +31,7 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.source_files = 'NBJSONModel/*'
-  s.resource_bundles = {
-    'NBJSONModel' => ['Pod/Assets/*.png']
-  }
 
-  # s.public_header_files = 'Pod/Classes/**/*.h'
-  # s.frameworks = 'UIKit', 'Foundation'
-  # s.dependency 'AFNetworking', '~> 2.5.4'
+  s.frameworks = 'UIKit', 'Foundation'
+  s.dependency 'AFNetworking', '~> 2.5.4'
 end
