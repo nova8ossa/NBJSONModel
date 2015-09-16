@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   # s.screenshots     = "www.example.com/screenshots_1", "www.example.com/screenshots_2"
   s.license          = 'MIT'
   s.author           = { "梵天" => "nova8ossa@gmail.com" }
-  s.source           = { :git => "https://github.com/nova8ossa/NBJSONModel.git", :tag => "v1.0.1" }
+  s.source           = { :git => "https://github.com/nova8ossa/NBJSONModel.git", :tag => "1.0.1" }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.platform     = :ios, '7.0'
