@@ -1,6 +1,5 @@
 # NBJSONModel
 
-[![CI Status](http://img.shields.io/travis/梵天/NBJSONModel.svg?style=flat)](https://travis-ci.org/梵天/NBJSONModel)
 [![Version](https://img.shields.io/cocoapods/v/NBJSONModel.svg?style=flat)](http://cocoapods.org/pods/NBJSONModel)
 [![License](https://img.shields.io/cocoapods/l/NBJSONModel.svg?style=flat)](http://cocoapods.org/pods/NBJSONModel)
 [![Platform](https://img.shields.io/cocoapods/p/NBJSONModel.svg?style=flat)](http://cocoapods.org/pods/NBJSONModel)
@@ -10,6 +9,7 @@
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
 ## Requirements
+Depend on AFNetworking v2.5.4, pod dependence.
 
 ## Installation
 
